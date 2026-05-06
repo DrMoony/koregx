@@ -1,6 +1,6 @@
-# Cross-Region Pharma Reg Web Service — Design Spec
+# KoRegX — Cross-Region Pharma Reg Web Service Design Spec
 
-> Working codename: `reg-cross-ref`. 3개 브랜드 후보는 §10 참조.
+> Brand: **KoRegX** (Korea-anchored regulatory cross-reference). 확정 2026-05-07.
 > 작성일: 2026-05-07
 > Brainstorm 세션: Korean Law MCP 모티브 → scope 확장 → standalone 웹서비스 + MCP secondary
 
@@ -264,15 +264,27 @@ Source code    : TypeScript, monorepo 아님 (단일 Next.js app + ETL 패키지
 
 ---
 
-## 10. Naming & branding (3 후보, 사용자 선택)
+## 10. Naming & branding
 
-| 후보 | 어원 | 톤 | parallel |
-|---|---|---|---|
-| **RegGalaxy** | Reg(ulation) + Galaxy. CT-Galaxy와 family naming | 우주 메타포 | CT-Galaxy 직접 parallel |
-| **Pharmacopia** | Pharmacopoeia 변주. "약전 + utopia/copious" 합성 | 어휘 풍부함 강조 | 독립 |
-| **RegistryX** | Registry + Cross. 다지역 cross-reference 강조 | 기능 직접 표현 | 독립 |
+**확정: KoRegX**
 
-**사용자 결정 후 적용**: 폴더명 `reg-cross-ref` → `<picked-name>` 리네임, README/MCP 서버명/도메인 동일 통일.
+| 요소 | 의미 |
+|---|---|
+| **Ko** | Korea / Korean — K-HealthMap family naming, Korea-anchored 포지셔닝 truth |
+| **Reg** | Regulation — 핵심 도메인 |
+| **X** | Cross(-region/-reference) + eXchange + eXtension — 5-region USP signaling |
+
+**적용 항목**:
+- 폴더명: `koregx/`
+- npm package: `koregx` (예약 가능 시) 또는 `@koregx/web` `@koregx/mcp`
+- 도메인 후보: `koregx.com` / `koregx.io` / `koregx.dev` (plan 단계 첫 task에서 가용성 확인)
+- GitHub repo: `koregx/koregx` 또는 `drmoony/koregx`
+- MCP 서버 식별자: `koregx`
+
+**탈락 후보 (참고용)**:
+- ~~RegGalaxy~~ (CT-Galaxy parallel, derivative)
+- ~~Pharmacopia~~ (obscure, hard to spell)
+- ~~RegistryX~~ (generic)
 
 ---
 
