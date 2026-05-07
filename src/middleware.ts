@@ -5,6 +5,8 @@ const isPublicRoute = createRouteMatcher([
   '/sign-in(.*)',
   '/sign-up(.*)',
   '/api/mcp(.*)',  // MCP는 자체 인증
+  '/search(.*)',
+  '/drug(.*)',
 ])
 
 export default clerkMiddleware(async (auth, req) => {
