@@ -31,11 +31,14 @@
 | Phase | 범위 |
 |---|---|
 | v0.1 | 한국 (MFDS · HIRA · 복지부 · KPIS) |
+| v0.2 | + 한국 헬스케어 관계법령 (약사법 · 의료기기법 · 첨생법 · 국민건강보험법 등 ~8-12개) |
 | v0.5 | + FDA (openFDA) |
 | v1.0 | + EMA (EPAR + medicines DB) |
 | v1.5 | + PMDA + NMPA (Asia bundle) |
 | v2 | 의료기기 (60-70% c-level reuse) |
 | v3 | DTx / AI SaMD (별도 sub-project) |
+
+⚠️ **의료법 (Medical Practice Act)은 KoRegX scope out** — 별도 medical case law MCP 프로젝트로 분리 (`../medical-case-law-mcp-TODO.md`).
 
 ## Stack
 

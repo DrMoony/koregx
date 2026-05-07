@@ -57,13 +57,28 @@
 | Phase | 범위 | 추정 (claude 시간) | 핵심 difficulty |
 |---|---|---|---|
 | **v0.1** | 한국 (식약처 + HIRA + 복지부 + KPIS) | ~50시간 (10일 × 5h) | OC 키 발급 + ATC/KDC/EDI 매핑 |
+| **v0.2** | + 한국 약사법 등 헬스케어 관계법령 (법제처 OpenAPI / Korean Law MCP federation) | ~10~15시간 | federation vs reimpl 결정, 8-12개 법령 좁히기 |
 | **v0.5** | + FDA (openFDA) | ~15시간 | PharmaNova 기존 코드 fork |
 | **v1.0** | + EMA (EPAR scrape + medicines DB) | ~30시간 | 정식 API 없음 → scrape + PDF parse |
 | **v1.5** | + PMDA + NMPA (Asia bundle) | ~25시간 | JP·CN 의약품 명칭 정규화 |
 | **v2** | 의료기기 | ~30시간 (60-70% c-level reuse) | GMDN/한국 분류, 510(k)/De Novo/PMA/MDR/IVDR 별 lifecycle |
 | **v3** | DTx / AI SaMD | 별도 sub-project | EU AI Act, FDA AI/ML SaMD Action Plan, 식약처 디지털헬스기기 가이드라인 |
 
-**총 v0.1~v1.5 합계**: ~120시간 = 24일 × 5h/day = ~5주 압축 / 12주 분산.
+**총 v0.1~v1.5 합계**: ~135시간 = 27일 × 5h/day = ~5.5주 압축 / 13주 분산 (v0.2 포함).
+
+**v0.2 헬스케어 관계법령 풀셋 (대상 ~8-12개)**:
+- **약사법** (Pharmaceutical Affairs Act) + 시행령 + 시행규칙 — 의약품·약국·제약사 핵심
+- **의료기기법** + 시행령 + 시행규칙
+- **첨단재생의료 및 첨단바이오의약품 안전 및 지원에 관한 법률** (첨생법)
+- **희귀질환관리법**
+- **마약류 관리에 관한 법률**
+- **국민건강보험법** (NHI Act) — 급여 결정 base
+- **혁신의료기기 지원 및 관리 등에 관한 법률**
+- **약사법 등에 관한 행정처분 기준** (식약처 고시)
+- **약제의 결정 및 조정 기준** (보건복지부 고시)
+- **건강보험요양급여 행위 및 그 상대가치점수** (보건복지부 고시)
+
+⚠️ **의료법 (Medical Practice Act)은 KoRegX scope out** — 별도 medical case law MCP 프로젝트 (`../medical-case-law-mcp-TODO.md` 참조). 의료법은 의료인·의료기관·의료행위 영역으로 페르소나가 다름.
 
 ---
 
@@ -153,6 +168,25 @@
 - 회의 raw 토의록은 비공개 원칙. 정보공개청구로만 부분 입수.
 - v0.1은 웹 공개분만 풀 파싱. 이것만으로도 "고시 이면의 hx 드릴다운"의 70~80%는 달성 가능.
 
+### 6.1 v0.2 추가 sources — 한국 헬스케어 관계법령
+
+| Source | URL / API | 데이터 | 인증 |
+|---|---|---|---|
+| **법제처 OpenAPI** | open.law.go.kr | 약사법·의료기기법·첨생법 등 8-12개 법령 본문, 시행령/시행규칙, 개정 history, 별표/별지서식 | OC 키 (무료) |
+| **(대안) Korean Law MCP federation** | korean-law-mcp.fly.dev/mcp | 같은 데이터를 MCP-as-upstream으로 consume | OC 키 query param |
+
+**Federation vs Reimplementation 결정 (v0.2 plan 단계)**:
+- **Federation 장점**: DRY, Korean Law MCP가 이미 약칭 인식·조문번호 변환·HWPX 별표 파싱 같은 hard work 완료 → KoRegX는 헬스케어 특화 chain tool에 집중 가능.
+- **Federation 단점**: 외부 의존성 (downtime, breaking change risk), 라이선스 호환성 확인 필요.
+- **Reimpl 장점**: 풀 제어, 헬스케어 specific 법령에만 좁혀서 schema 단순화, 캐시 정책 자체 결정.
+- **Reimpl 단점**: 약사법·의료기기법 약 12개 법령만 다뤄도 시행령/시행규칙·개정 history·별표 파싱이 동일하게 필요 (~10-15h 추가 작업).
+- **추천**: v0.2에서 **federation 시작** → 사용자 패턴 보고 reimpl 필요시 v0.5 시점에 전환.
+
+**v0.2 영구 out**:
+- 의료법 (Medical Practice Act) — 별도 medical case law MCP (`../medical-case-law-mcp-TODO.md`)
+- 의료법 시행령/시행규칙
+- 의료 판례·의료분쟁조정중재원 데이터 (전부 medical case law MCP)
+
 ---
 
 ## 7. Core entities (sketch schema)
@@ -229,6 +263,13 @@ CrossRegionLink {
 - `chain_drug_dossier(query)` — 약물 검색 → 허가 + 급여 + 결정 history 통합
 - `chain_decision_rationale(query)` — 결정 검색 → 안건 본문 + 보도자료 + 관련 고시 통합
 - `chain_amendment_track(drugId)` — 약가·급여 변경 history + 사유
+
+### Law tools (v0.2)
+- `search_law(query, lawName?)` — 약사법·의료기기법·첨생법 등 헬스케어 법령 검색
+- `get_law_text(lawId, jo?)` — 법령 본문 또는 특정 조문 (예: 약사법 § 38)
+- `get_law_amendments(lawId)` — 개정 history + 시행일
+- `get_annexes(lawId)` — 별표/별지서식 본문 (HWPX 파싱)
+- `chain_law_dispatch(drugId)` — 약물 → 적용 법령 + 행정처분 기준 + 관련 고시 통합
 
 ### Cross-region chain tools (v0.5+)
 - `chain_compare_global_approval(drugName)` — 5-region 허가 status 비교
@@ -307,6 +348,12 @@ Source code    : TypeScript, monorepo 아님 (단일 Next.js app + ETL 패키지
 - Cross-region 비교 (v0.5)
 - 의미검색 기반 "유사 결정 끌어내기" (pgvector 작동하면 OK이나 acceptance criterion 아님)
 - raw 토의록 검색 (영구 out)
+- 법령 검색 (v0.2)
+
+### 11.1 v0.2 Acceptance criteria (법령 layer 추가 시)
+
+8. **법령 조문 lookup**: "약사법 § 38 변경 history + 관련 식약처 행정처분 기준"
+9. **약물 ↔ 법령 dispatch**: "GLP-1 RA 약물군에 적용되는 약사법 조항 + 의료기기법 (combination product 시)" 
 
 ---
 
@@ -328,7 +375,8 @@ Source code    : TypeScript, monorepo 아님 (단일 Next.js app + ETL 패키지
 
 | 항목 | 상태 |
 |---|---|
-| 임상의용 급여 lookup UI | 별도 MCP 프로젝트 (TODO) |
+| 임상의용 급여 lookup UI | 별도 MCP 프로젝트 (TODO, parent dir의 별도 파일) |
+| **의료법 (Medical Practice Act) + 의료 판례** | **별도 medical case law MCP 프로젝트** (`../medical-case-law-mcp-TODO.md`) |
 | 의료기기 | v2 (60-70% c-level reuse 가정) |
 | DTx / AI SaMD | v3 또는 별도 sub-project |
 | HIRA raw 토의록 | 영구 out (비공개) |
@@ -345,8 +393,10 @@ Source code    : TypeScript, monorepo 아님 (단일 Next.js app + ETL 패키지
 3. **Cron schedule**: HIRA 약평위는 월 1~2회 → daily check 충분. 식약처 허가는 매주 → daily check.
 4. **MCP 인증**: Korean Law MCP는 OC 키 query parameter. 우리도 같은 패턴? Clerk와 별도 키?
 5. **국문/영문 일등시민 처리**: Persona가 글로벌 reg pro 포함 → 영문 라벨/UI도 자연스럽게. i18n 전략은 plan 단계.
-6. **MCP tool 개수 cap**: Korean Law MCP가 89→15로 consolidate. 우리는 처음부터 ~10~15개로 시작.
+6. **MCP tool 개수 cap**: Korean Law MCP가 89→15로 consolidate. 우리는 처음부터 ~10~15개로 시작 (v0.2 법령 추가 시 +5 ~ 20개로 확장).
 7. **PharmaNova와의 의존 방향**: PharmaNova가 본 서비스를 consume. 그 인터페이스 (MCP? REST API?) 결정.
+8. **v0.2 법령 layer — federation vs reimplementation**: Korean Law MCP federation으로 시작 vs 법제처 OpenAPI 직접 통합. 라이선스 호환성 + 외부 의존 안정성 + 헬스케어 specific 좁힘 가치 매트릭스로 v0.2 plan 단계에서 결정.
+9. **약물-법령 dispatch 매핑**: Drug entity → 적용 법령 자동 추론 룰 (예: GLP-1 RA → 약사법, 첨단바이오의약품이면 + 첨생법, 마약류 분류 시 + 마약류관리법). 룰 기반 vs 수동 큐레이션 vs LLM inference.
 
 ---
 
@@ -355,10 +405,11 @@ Source code    : TypeScript, monorepo 아님 (단일 Next.js app + ETL 패키지
 | Phase | Estimate | 분포 (대략) |
 |---|---|---|
 | v0.1 | ~50h | scaffold 5h + ETL 20h + 웹 UI 15h + MCP 5h + 테스트/배포 5h |
+| v0.2 | ~12h | federation 라우팅 4h + 법령 schema 추가 3h + law tools 3h + chain_law_dispatch 2h |
 | v0.5 | ~15h | openFDA 통합 8h + cross-region UI 5h + 테스트 2h |
 | v1.0 | ~30h | EMA scrape 15h + EPAR 파싱 10h + UI 확장 5h |
 | v1.5 | ~25h | PMDA 10h + NMPA 12h + Asia bundle UI 3h |
-| **합계 v0.1~v1.5** | **~120h** | |
+| **합계 v0.1~v1.5** | **~132h** | |
 
 **User 결정 시간 (병목)**: phase별 +2~5시간 (회의록 schema 검증, naming, UI mockup 리뷰 등).
 
