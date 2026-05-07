@@ -1,0 +1,65 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters", "postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  extensions = [pgvector(map: "vector")]
+}
+
+model Drug {
+  id            String   @id @default(cuid())
+  kfdaCode      String?  @unique
+  itemSeq       String?  @unique
+  productName   String
+  ingredient    String?
+  manufacturer  String?
+  atc           String?
+  category      String?
+  status        String   @default("active")
+  rawData       Json?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  approvals     Approval[]
+  sourceDocs    SourceDocument[]
+
+  @@index([productName])
+  @@index([ingredient])
+}
+
+model Approval {
+  id              String   @id @default(cuid())
+  drugId          String
+  drug            Drug     @relation(fields: [drugId], references: [id], onDelete: Cascade)
+  region          String
+  authority       String
+  approvalDate    DateTime?
+  approvalType    String?
+  indication      String?
+  status          String   @default("active")
+  rawData         Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([drugId, region])
+  @@index([region, approvalDate])
+}
+
+model SourceDocument {
+  id          String   @id @default(cuid())
+  drugId      String?
+  drug        Drug?    @relation(fields: [drugId], references: [id], onDelete: SetNull)
+  source      String
+  url         String
+  title       String?
+  contentHash String
+  fetchedAt   DateTime @default(now())
+  parsedAt    DateTime?
+  parser      String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  @@unique([source, contentHash])
+  @@index([source, fetchedAt])
+}
