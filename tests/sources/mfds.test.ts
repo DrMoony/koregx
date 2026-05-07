@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { MfdsSource, parseMfdsItem } from '@/lib/sources/mfds'
+import { prisma } from '@/lib/db'
 import wegovyFixture from '../fixtures/mfds-search-wegovy.json'
 
 const wegovyItems = (wegovyFixture as { body: { items: Record<string, unknown>[] } }).body.items
@@ -95,5 +96,114 @@ describe('MfdsSource', () => {
     const parsed = await source.parse(wegovyItems[0])
     expect(parsed).toHaveLength(1)
     expect(parsed[0].itemSeq).toBe(wegovyItems[0].ITEM_SEQ)
+  })
+})
+
+describe('MfdsSource.persist', () => {
+  beforeEach(async () => {
+    if (process.env.NODE_ENV === 'production') throw new Error('persist test cannot run in production')
+    // Clean test data only (TEST_ prefix)
+    const testDrugs = await prisma.drug.findMany({ where: { itemSeq: { startsWith: 'TEST_' } }, select: { id: true } })
+    if (testDrugs.length > 0) {
+      const ids = testDrugs.map((d) => d.id)
+      await prisma.approval.deleteMany({ where: { drugId: { in: ids } } })
+      await prisma.drug.deleteMany({ where: { id: { in: ids } } })
+    }
+  })
+
+  it('inserts Drug + Approval (KR/MFDS) on first persist', async () => {
+    const parsed = [{
+      region: 'KR' as const,
+      itemSeq: 'TEST_001',
+      productName: '테스트정',
+      ingredient: '테스트성분',
+      manufacturer: '테스트사',
+      atc: 'A10BJ06',
+      category: '전문의약품',
+      rawData: { ITEM_SEQ: 'TEST_001', ITEM_NAME: '테스트정', ITEM_PERMIT_DATE: '20230101' },
+    }]
+    const source = new MfdsSource({ serviceKey: 'test' })
+    const result = await source.persist(parsed)
+    expect(result.inserted).toBe(1)
+    expect(result.updated).toBe(0)
+
+    const drug = await prisma.drug.findUnique({
+      where: { itemSeq: 'TEST_001' },
+      include: { approvals: true },
+    })
+    expect(drug).toBeTruthy()
+    expect(drug?.productName).toBe('테스트정')
+    expect(drug?.ingredient).toBe('테스트성분')
+    expect(drug?.atc).toBe('A10BJ06')
+    expect(drug?.approvals).toHaveLength(1)
+    expect(drug?.approvals[0].region).toBe('KR')
+    expect(drug?.approvals[0].authority).toBe('MFDS')
+  })
+
+  it('parses ITEM_PERMIT_DATE (YYYYMMDD) into Approval.approvalDate', async () => {
+    const parsed = [{
+      region: 'KR' as const,
+      itemSeq: 'TEST_002',
+      productName: '날짜테스트',
+      rawData: { ITEM_SEQ: 'TEST_002', ITEM_NAME: '날짜테스트', ITEM_PERMIT_DATE: '20230427' },
+    }]
+    const source = new MfdsSource({ serviceKey: 'test' })
+    await source.persist(parsed)
+
+    const drug = await prisma.drug.findUnique({
+      where: { itemSeq: 'TEST_002' },
+      include: { approvals: true },
+    })
+    expect(drug?.approvals[0].approvalDate).toBeTruthy()
+    expect(drug?.approvals[0].approvalDate?.toISOString().slice(0, 10)).toBe('2023-04-27')
+  })
+
+  it('updates existing Drug instead of duplicating', async () => {
+    const source = new MfdsSource({ serviceKey: 'test' })
+    const first = [{
+      region: 'KR' as const,
+      itemSeq: 'TEST_003',
+      productName: '오리지날',
+      rawData: { ITEM_SEQ: 'TEST_003' },
+    }]
+    const second = [{
+      region: 'KR' as const,
+      itemSeq: 'TEST_003',
+      productName: '갱신된이름',
+      rawData: { ITEM_SEQ: 'TEST_003' },
+    }]
+    await source.persist(first)
+    const r = await source.persist(second)
+    expect(r.updated).toBe(1)
+    expect(r.inserted).toBe(0)
+
+    const drug = await prisma.drug.findUnique({ where: { itemSeq: 'TEST_003' } })
+    expect(drug?.productName).toBe('갱신된이름')
+  })
+
+  it('marks status withdrawn when CANCEL_DATE present', async () => {
+    const parsed = [{
+      region: 'KR' as const,
+      itemSeq: 'TEST_004',
+      productName: '취소테스트',
+      rawData: { ITEM_SEQ: 'TEST_004', ITEM_NAME: '취소테스트', CANCEL_DATE: '20240101', CANCEL_NAME: '취소' },
+    }]
+    const source = new MfdsSource({ serviceKey: 'test' })
+    await source.persist(parsed)
+
+    const drug = await prisma.drug.findUnique({ where: { itemSeq: 'TEST_004' } })
+    expect(drug?.status).toBe('withdrawn')
+  })
+
+  it('skips items without itemSeq (no natural key)', async () => {
+    const parsed = [{
+      region: 'KR' as const,
+      productName: 'no key',
+      rawData: {},
+    }]
+    const source = new MfdsSource({ serviceKey: 'test' })
+    const r = await source.persist(parsed)
+    expect(r.inserted).toBe(0)
+    expect(r.updated).toBe(0)
   })
 })

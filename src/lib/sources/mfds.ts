@@ -1,5 +1,6 @@
 import { SourcePlugin } from './base'
 import type { Region } from '@/lib/types'
+import { prisma } from '@/lib/db'
 
 const MFDS_BASE_URL = 'https://apis.data.go.kr/1471000/DrugPrdtPrmsnInfoService07'
 const MFDS_OPERATION = 'getDrugPrdtPrmsnDtlInq06'
@@ -75,5 +76,82 @@ export class MfdsSource extends SourcePlugin {
 
   async parse(raw: unknown): Promise<ParsedDrug[]> {
     return [parseMfdsItem(raw as Record<string, unknown>)]
+  }
+
+  async persist(items: ParsedDrug[]): Promise<{ inserted: number; updated: number }> {
+    let inserted = 0
+    let updated = 0
+
+    for (const item of items) {
+      if (!item.itemSeq) continue // skip without natural key
+
+      const raw = item.rawData as Record<string, unknown>
+      const cancelDate =
+        typeof raw.CANCEL_DATE === 'string' && raw.CANCEL_DATE.trim() !== ''
+          ? raw.CANCEL_DATE.trim()
+          : null
+      const status = cancelDate ? 'withdrawn' : 'active'
+
+      const existing = await prisma.drug.findUnique({ where: { itemSeq: item.itemSeq } })
+
+      const drug = await prisma.drug.upsert({
+        where: { itemSeq: item.itemSeq },
+        create: {
+          itemSeq: item.itemSeq,
+          productName: item.productName,
+          ingredient: item.ingredient,
+          manufacturer: item.manufacturer,
+          atc: item.atc,
+          category: item.category,
+          status,
+          rawData: item.rawData as object,
+        },
+        update: {
+          productName: item.productName,
+          ingredient: item.ingredient,
+          manufacturer: item.manufacturer,
+          atc: item.atc,
+          category: item.category,
+          status,
+          rawData: item.rawData as object,
+          updatedAt: new Date(),
+        },
+      })
+
+      if (existing) {
+        updated++
+      } else {
+        inserted++
+      }
+
+      // Parse ITEM_PERMIT_DATE: YYYYMMDD → Date
+      const permitStr = typeof raw.ITEM_PERMIT_DATE === 'string' ? raw.ITEM_PERMIT_DATE.trim() : ''
+      const permitDate =
+        permitStr.length === 8
+          ? new Date(
+              `${permitStr.slice(0, 4)}-${permitStr.slice(4, 6)}-${permitStr.slice(6, 8)}T00:00:00Z`
+            )
+          : null
+
+      await prisma.approval.upsert({
+        where: { drugId_region: { drugId: drug.id, region: 'KR' } },
+        create: {
+          drugId: drug.id,
+          region: 'KR',
+          authority: 'MFDS',
+          approvalDate: permitDate,
+          status,
+          rawData: item.rawData as object,
+        },
+        update: {
+          approvalDate: permitDate,
+          status,
+          rawData: item.rawData as object,
+          updatedAt: new Date(),
+        },
+      })
+    }
+
+    return { inserted, updated }
   }
 }
