@@ -8,57 +8,149 @@ datasource db {
   extensions = [pgvector(map: "vector")]
 }
 
-model Drug {
-  id            String   @id @default(cuid())
-  kfdaCode      String?  @unique
-  itemSeq       String?  @unique
-  productName   String
-  ingredient    String?
-  manufacturer  String?
-  atc           String?
-  category      String?
-  status        String   @default("active")
-  rawData       Json?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  approvals     Approval[]
-  sourceDocs    SourceDocument[]
+model Law {
+  id               String                @id @default(cuid())
+  mst              String                @unique
+  lawId            String
+  nameKor          String
+  shortName        String?
+  category         String
+  agencyName       String
+  agencyCode       String?
+  effectiveDate    DateTime?
+  promulgationDate DateTime?
+  promulgationNo   String?
+  amendmentType    String?
+  scope            String                @default("healthcare")
+  rawData          Json
+  fetchedAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+  articles         LawArticle[]
+  interpretations  LegalInterpretation[]
 
-  @@index([productName])
+  @@index([nameKor])
+  @@index([effectiveDate])
+}
+
+model LawArticle {
+  id            String    @id @default(cuid())
+  lawId         String
+  law           Law       @relation(fields: [lawId], references: [id], onDelete: Cascade)
+  articleNo     String
+  articleSubNo  String?
+  title         String?
+  body          String
+  effectiveDate DateTime?
+  changedFlag   Boolean   @default(false)
+  rawData       Json?
+
+  @@unique([lawId, articleNo, articleSubNo])
+  @@index([lawId])
+}
+
+model LegalInterpretation {
+  id            String                       @id @default(cuid())
+  ipNo          String                       @unique
+  caseNo        String?
+  title         String
+  inquirer      String?
+  respondent    String
+  responseDate  DateTime?
+  body          String
+  bodyEmbedding Unsupported("vector(768)")?
+  lawId         String?
+  law           Law?                         @relation(fields: [lawId], references: [id])
+  rawData       Json
+  fetchedAt     DateTime                     @default(now())
+  updatedAt     DateTime                     @updatedAt
+
+  @@index([title])
+  @@index([responseDate])
+}
+
+model AdminRule {
+  id               String                       @id @default(cuid())
+  arNo             String                       @unique
+  name             String
+  agencyName       String
+  ruleType         String
+  promulgationDate DateTime?
+  amendmentCode    String?
+  body             String?
+  bodyEmbedding    Unsupported("vector(768)")?
+  rawData          Json
+  fetchedAt        DateTime                     @default(now())
+  updatedAt        DateTime                     @updatedAt
+
+  @@index([name])
+  @@index([agencyName])
+  @@index([promulgationDate])
+}
+
+model HiraDecision {
+  id             String                       @id @default(cuid())
+  body           String
+  meetingDate    DateTime
+  meetingNo      Int?
+  agendaNo       Int?
+  agenda         String
+  drug           String?
+  ingredient     String?
+  ruling         String
+  rationale      String?
+  rationaleEmbed Unsupported("vector(768)")?
+  sourceUrl      String
+  sourceHash     String
+  rawData        Json?
+  fetchedAt      DateTime                     @default(now())
+
+  @@unique([sourceHash, agendaNo])
+  @@index([body, meetingDate])
+  @@index([drug])
   @@index([ingredient])
 }
 
-model Approval {
-  id              String   @id @default(cuid())
-  drugId          String
-  drug            Drug     @relation(fields: [drugId], references: [id], onDelete: Cascade)
-  region          String
-  authority       String
-  approvalDate    DateTime?
-  approvalType    String?
-  indication      String?
-  status          String   @default("active")
-  rawData         Json?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+model MfdsRuling {
+  id            String                       @id @default(cuid())
+  externalId    String                       @unique
+  title         String
+  body          String
+  bodyEmbedding Unsupported("vector(768)")?
+  category      String?
+  responseDate  DateTime?
+  sourceUrl     String
+  sourceHash    String
+  rawData       Json?
+  fetchedAt     DateTime                     @default(now())
 
-  @@unique([drugId, region])
-  @@index([region, approvalDate])
+  @@index([title])
+  @@index([category, responseDate])
+}
+
+model Citation {
+  id              String  @id @default(cuid())
+  srcType         String
+  srcId           String
+  refType         String
+  refId           String
+  refLawShortName String?
+  refArticleNo    String?
+  rawText         String
+  confidence      Float   @default(1.0)
+
+  @@index([srcType, srcId])
+  @@index([refType, refId])
 }
 
 model SourceDocument {
-  id          String   @id @default(cuid())
-  drugId      String?
-  drug        Drug?    @relation(fields: [drugId], references: [id], onDelete: SetNull)
+  id          String    @id @default(cuid())
   source      String
   url         String
-  title       String?
   contentHash String
-  fetchedAt   DateTime @default(now())
+  fetchedAt   DateTime  @default(now())
   parsedAt    DateTime?
   parser      String?
   metadata    Json?
-  createdAt   DateTime @default(now())
 
   @@unique([source, contentHash])
   @@index([source, fetchedAt])
