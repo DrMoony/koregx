@@ -56,10 +56,104 @@ PharmaNova scaffold fork.
 - [ ] v0.1 web UI + MCP server
 - [ ] v0.1 deploy + Claude Desktop connector
 
+## Live Demo
+
+> ⚠️ Production deploy pending. Local dev works end-to-end (see below).
+
+- Web: TBD (will be `https://koregx.vercel.app` or custom domain)
+- Search: `<deploy-url>/search?q=위고비`
+- MCP endpoint: `<deploy-url>/api/mcp`
+
+## Local Development
+
+Prerequisites:
+- Node 20+
+- npm 10+
+- Neon Postgres account (free tier OK) — pgvector extension enabled
+- Clerk account (free tier OK)
+- 식약처 OpenAPI service key
+
+```bash
+git clone https://github.com/DrMoony/koregx.git
+cd koregx
+npm install
+cp .env.example .env.local
+# Fill in .env.local with your keys (see below)
+npx prisma migrate deploy
+npm run ingest:mfds 위고비 20  # seed dev DB
+npm run dev -- --port 3300
+```
+
+Visit http://localhost:3300/search?q=위고비
+
+### Required env vars (`.env.local`)
+
+```bash
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
+CLERK_SECRET_KEY=sk_test_...
+DATABASE_URL=postgresql://user:pass@host/db?sslmode=require
+GEMINI_API_KEY=...
+MFDS_SERVICE_KEY=<decoded service key from data.go.kr>
+```
+
+### API key sources
+
+- 식약처 OpenAPI: https://www.data.go.kr/data/15095677/openapi.do (의약품 제품 허가정보 — `DrugPrdtPrmsnInfoService07`)
+- Clerk: https://dashboard.clerk.com
+- Neon: https://console.neon.tech (enable pgvector extension)
+- Gemini: https://ai.google.dev
+
+## MCP Connector
+
+KoRegX exposes 3 tools via MCP server at `/api/mcp`:
+- `search_drug` — 약물 검색 (제품명·성분·제조사)
+- `get_drug` — 약물 상세 (허가 + 출처 문서)
+- `chain_drug_dossier` — 검색 + 상세 통합 dossier
+
+### Claude Desktop
+
+Edit `%APPDATA%\Claude\claude_desktop_config.json` (Windows) or `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS):
+
+```json
+{
+  "mcpServers": {
+    "koregx": {
+      "url": "<deploy-url>/api/mcp"
+    }
+  }
+}
+```
+
+For local dev, use `http://localhost:3300/api/mcp`.
+
+Restart Claude Desktop. Try queries like "위고비 한국 허가 정보 조회해줘" — KoRegX tools will be invoked.
+
+### claude.ai (Web)
+
+Settings → Connectors → Add custom connector → URL: `<deploy-url>/api/mcp`
+
+### Cursor / Windsurf / other MCP clients
+
+Same MCP config pattern as Claude Desktop.
+
+## Acceptance Tests
+
+```bash
+npm test       # 28 unit + integration tests
+npm run e2e    # Playwright (requires dev server + seeded DB)
+```
+
+## Tech Notes
+
+- **식약처 endpoint**: `DrugPrdtPrmsnInfoService07/getDrugPrdtPrmsnDtlInq06` (의약품 제품 허가정보)
+- **Schema entities**: `Drug`, `Approval` (region-specific), `SourceDocument` (provenance)
+- **Cross-region key**: `MAIN_INGR_ENG` (INN, e.g. "Semaglutide") + `ATC_CODE` for v0.5+ FDA/EMA join
+- **HIRA cross-link**: `EDI_CODE` field captured for v0.2 reimbursement layer
+
 ## License
 
-MIT (배포 시점 적용).
+MIT — see [LICENSE](./LICENSE).
 
 ## Author
 
-Moon Kim ([@drmoony](https://github.com/drmoony))
+Moon Kim ([@DrMoony](https://github.com/DrMoony))
