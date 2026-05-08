@@ -58,11 +58,11 @@ PharmaNova scaffold fork.
 
 ## Live Demo
 
-> ⚠️ Production deploy pending. Local dev works end-to-end (see below).
 
-- Web: TBD (will be `https://koregx.vercel.app` or custom domain)
-- Search: `<deploy-url>/search?q=위고비`
-- MCP endpoint: `<deploy-url>/api/mcp`
+
+- Web: `https://koregx.vercel.app`
+- Search: `https://koregx.vercel.app/search?q=위고비`
+- MCP endpoint: `https://koregx.vercel.app/api/mcp`
 
 ## Local Development
 
@@ -118,7 +118,7 @@ Edit `%APPDATA%\Claude\claude_desktop_config.json` (Windows) or `~/Library/Appli
 {
   "mcpServers": {
     "koregx": {
-      "url": "<deploy-url>/api/mcp"
+      "url": "https://koregx.vercel.app/api/mcp"
     }
   }
 }
@@ -130,7 +130,7 @@ Restart Claude Desktop. Try queries like "위고비 한국 허가 정보 조회�
 
 ### claude.ai (Web)
 
-Settings → Connectors → Add custom connector → URL: `<deploy-url>/api/mcp`
+Settings → Connectors → Add custom connector → URL: `https://koregx.vercel.app/api/mcp`
 
 ### Cursor / Windsurf / other MCP clients
 
