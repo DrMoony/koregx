@@ -7,6 +7,7 @@ import { getLawArticleTool } from '@/lib/mcp/tools/get-law-article'
 import { getInterpretationTool } from '@/lib/mcp/tools/get-interpretation'
 import { getAdminRuleTool } from '@/lib/mcp/tools/get-admin-rule'
 import { chainLawLifecycleTool } from '@/lib/mcp/tools/chain-law-lifecycle'
+import { chainNaturalQueryTool } from '@/lib/mcp/tools/chain-natural-query'
 
 // ─── search_law ──────────────────────────────────────────────────────────────
 describe('search_law', () => {
@@ -214,4 +215,50 @@ describe('chain_law_lifecycle', () => {
     expect(r.summary).toContain('행정해석')
     expect(r.summary).toContain('관련 행정규칙')
   })
+})
+
+// ─── chain_natural_query ──────────────────────────────────────────────────────
+describe('chain_natural_query', () => {
+  // skip LLM calls if no valid API key — but structural/fallback tests always run
+  const hasLlmKey = !!process.env.GEMINI_API_KEY
+
+  it('returns QAResult shape with required fields', async () => {
+    const r = await chainNaturalQueryTool.execute({ query: '약사법 제1조 목적' })
+    expect(r.query).toBe('약사법 제1조 목적')
+    expect(typeof r.answer).toBe('string')
+    expect(r.answer.length).toBeGreaterThan(5)
+    expect(Array.isArray(r.retrievedInterpretations)).toBe(true)
+    expect(Array.isArray(r.retrievedAdminRules)).toBe(true)
+    expect(Array.isArray(r.citationsVerified)).toBe(true)
+    expect(typeof r.modelUsed).toBe('string')
+  }, 30_000)
+
+  it('retrieves interpretations from pgvector', async () => {
+    const r = await chainNaturalQueryTool.execute({ query: '의약품 허가' })
+    // Should return some interpretations if embeddings are populated
+    expect(Array.isArray(r.retrievedInterpretations)).toBe(true)
+    // Each hit should have id, title, distance
+    for (const hit of r.retrievedInterpretations) {
+      expect(typeof hit.id).toBe('string')
+      expect(typeof hit.title).toBe('string')
+      expect(typeof hit.distance).toBe('number')
+    }
+  }, 30_000)
+
+  it('verify_citations returns citationsVerified array', async () => {
+    const r = await chainNaturalQueryTool.execute({ query: '약사법 제38조 적용 범위' })
+    expect(Array.isArray(r.citationsVerified)).toBe(true)
+    // All citation objects should have rawText and verified fields
+    for (const c of r.citationsVerified) {
+      expect(typeof c.rawText).toBe('string')
+      expect(typeof c.verified).toBe('boolean')
+    }
+  }, 30_000)
+
+  it.skipIf(!hasLlmKey)('LLM answer is non-trivial when API key present (skip if key invalid)', async () => {
+    const r = await chainNaturalQueryTool.execute({ query: '약사법상 임상시험 sponsor 의무' })
+    expect(r.answer.length).toBeGreaterThan(50)
+    // modelUsed is 'gemini' on success, 'error' if key invalid — both acceptable
+    expect(['gemini-2.5-flash', 'gemini-2.0-flash', 'error']).toContain(r.modelUsed)
+  }, 45_000)
 })

@@ -12,10 +12,12 @@
     "e2e": "playwright test",
     "postinstall": "prisma generate",
     "ingest:law": "tsx scripts/ingest-law.ts",
-    "ingest:hira": "tsx scripts/ingest-hira.ts"
+    "ingest:hira": "tsx scripts/ingest-hira.ts",
+    "embed:corpus": "tsx scripts/embed-corpus.ts"
   },
   "dependencies": {
     "@clerk/nextjs": "^7.3.2",
+    "@google/genai": "^2.0.0",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "@neondatabase/serverless": "^1.1.0",
     "@prisma/adapter-neon": "^7.8.0",

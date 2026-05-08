@@ -9,6 +9,7 @@ import { getLawArticleTool } from './tools/get-law-article'
 import { getInterpretationTool } from './tools/get-interpretation'
 import { getAdminRuleTool } from './tools/get-admin-rule'
 import { chainLawLifecycleTool } from './tools/chain-law-lifecycle'
+import { chainNaturalQueryTool } from './tools/chain-natural-query'
 
 const tools = [
   searchLawTool,
@@ -19,12 +20,13 @@ const tools = [
   getInterpretationTool,
   getAdminRuleTool,
   chainLawLifecycleTool,
+  chainNaturalQueryTool, // 9th tool: LLM Q&A orchestrator
 ]
 const toolByName = new Map(tools.map((t) => [t.name, t]))
 
 export function createKoRegXServer() {
   const server = new Server(
-    { name: 'koregx', version: '0.2.0' },
+    { name: 'koregx', version: '0.2.1' },
     { capabilities: { tools: {} } },
   )
 
