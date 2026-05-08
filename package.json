@@ -9,7 +9,6 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "ingest:mfds": "tsx scripts/ingest-mfds.ts",
     "e2e": "playwright test",
     "postinstall": "prisma generate"
   },
