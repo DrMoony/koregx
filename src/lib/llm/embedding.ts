@@ -1,14 +1,15 @@
 /**
- * Gemini text-embedding-004 helper (768 dim)
+ * Gemini gemini-embedding-001 helper (3072 native, truncated to 768 via outputDimensionality)
  *
- * Uses raw REST (same pattern as PharmaNova llm-router) instead of @google/genai SDK
- * to avoid SDK init issues. Falls back to deterministic hash-based embedding if API
- * key is unavailable/invalid — vector search still works, semantic quality degrades.
+ * Uses raw REST (same pattern as PharmaNova llm-router). Falls back to deterministic
+ * hash-based embedding if API key is unavailable — vector search structurally works,
+ * semantic quality degrades.
  *
- * NOTE: Replace GEMINI_API_KEY in .env.local with a valid key to get real embeddings.
+ * Note: text-embedding-004 was deprecated. gemini-embedding-001 is the current model.
+ * outputDimensionality=768 keeps schema compatibility (vector(768)).
  */
 
-const EMBED_MODEL = 'text-embedding-004'
+const EMBED_MODEL = 'gemini-embedding-001'
 const DIM = 768
 const EMBED_ENDPOINT = (key: string) =>
   `https://generativelanguage.googleapis.com/v1beta/models/${EMBED_MODEL}:embedContent?key=${key}`
@@ -40,7 +41,10 @@ export async function embed(text: string): Promise<number[]> {
 async function embedViaGeminiRest(text: string, apiKey: string): Promise<number[]> {
   // ~8000 chars ≈ 2000 tokens for Korean — stay under embedding model limit
   const truncated = text.slice(0, 8000)
-  const body = JSON.stringify({ content: { parts: [{ text: truncated }] } })
+  const body = JSON.stringify({
+    content: { parts: [{ text: truncated }] },
+    outputDimensionality: DIM,
+  })
   const res = await fetch(EMBED_ENDPOINT(apiKey), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

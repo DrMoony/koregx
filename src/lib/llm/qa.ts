@@ -35,10 +35,11 @@ export interface QAResult {
 
 /**
  * Korean law citation pattern:
- *   [법명] 제[N]조(의 [N])?
- *   e.g. 약사법 제38조, 의료기기법 시행규칙 제10조의2
+ *   (「)?[법명](」)? 제[N]조(의 [N])?
+ *   e.g. 약사법 제38조, 「약사법」 제38조, 의료기기법 시행규칙 제10조의2
+ *   Handles 「」 (Korean book title brackets) which Gemini commonly emits.
  */
-const CITATION_REGEX = /([가-힣]+(?:법|령|규칙)(?:\s*시행(?:령|규칙))?)\s*제\s*(\d+)\s*조(?:의\s*(\d+))?/g
+const CITATION_REGEX = /[「『\[]?([가-힣]+(?:법|령|규칙)(?:\s*시행(?:령|규칙))?)[」』\]]?\s*제\s*(\d+)\s*조(?:의\s*(\d+))?/g
 
 async function generateViaGemini(prompt: string, model: string, apiKey: string): Promise<string> {
   const body = JSON.stringify({

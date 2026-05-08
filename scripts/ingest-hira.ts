@@ -1,6 +1,6 @@
 import { config } from 'dotenv'
 import { resolve } from 'node:path'
-config({ path: resolve(process.cwd(), '.env.local') })
+config({ path: resolve(process.cwd(), '.env.local') , override: true })
 
 async function main() {
   const { HiraSource } = await import('@/lib/sources/hira')

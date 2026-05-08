@@ -2,7 +2,7 @@ import { config } from 'dotenv'
 import { resolve } from 'node:path'
 
 // Load .env.local for tests
-config({ path: resolve(process.cwd(), '.env.local') })
+config({ path: resolve(process.cwd(), '.env.local') , override: true })
 
 // Refuse to run tests in production
 if (process.env.NODE_ENV === 'production') {

@@ -1,7 +1,7 @@
 import { config } from 'dotenv'
 import { resolve } from 'node:path'
 
-config({ path: resolve(process.cwd(), '.env.local') })
+config({ path: resolve(process.cwd(), '.env.local') , override: true })
 
 import type { ParsedLawSearch } from '@/lib/sources/law-go-kr'
 
