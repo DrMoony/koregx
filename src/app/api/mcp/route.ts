@@ -1,27 +1,17 @@
-export const dynamic = 'force-static'
+import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js'
+import { createKoRegXServer } from '@/lib/mcp/server'
+
+export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
-const RESPONSE = {
-  jsonrpc: '2.0',
-  error: {
-    code: -32000,
-    message: 'KoRegX MCP server is offline for v0.2 re-architecture (drug catalog → law/interpretation primary). Live again shortly.',
-    data: { repo: 'https://github.com/DrMoony/koregx' },
-  },
+async function handler(req: Request): Promise<Response> {
+  const server = createKoRegXServer()
+  const transport = new WebStandardStreamableHTTPServerTransport({
+    sessionIdGenerator: undefined,
+    enableJsonResponse: true,
+  })
+  await server.connect(transport)
+  return await transport.handleRequest(req)
 }
 
-function res() {
-  return Response.json(RESPONSE, { status: 503 })
-}
-
-export async function GET() {
-  return res()
-}
-
-export async function POST() {
-  return res()
-}
-
-export async function DELETE() {
-  return res()
-}
+export { handler as GET, handler as POST, handler as DELETE }
