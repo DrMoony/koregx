@@ -10,7 +10,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "e2e": "playwright test",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "ingest:law": "tsx scripts/ingest-law.ts"
   },
   "dependencies": {
     "@clerk/nextjs": "^7.3.2",
