@@ -11,7 +11,8 @@
     "test:watch": "vitest",
     "e2e": "playwright test",
     "postinstall": "prisma generate",
-    "ingest:law": "tsx scripts/ingest-law.ts"
+    "ingest:law": "tsx scripts/ingest-law.ts",
+    "ingest:hira": "tsx scripts/ingest-hira.ts"
   },
   "dependencies": {
     "@clerk/nextjs": "^7.3.2",
@@ -24,6 +25,7 @@
     "dotenv": "^17.4.2",
     "lucide-react": "^1.14.0",
     "next": "16.2.5",
+    "pdf-parse": "^2.4.5",
     "prisma": "^7.8.0",
     "radix-ui": "^1.4.3",
     "react": "19.2.4",
@@ -38,6 +40,7 @@
     "@playwright/test": "^1.59.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
+    "@types/pdf-parse": "^1.1.5",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/ws": "^8.18.1",
