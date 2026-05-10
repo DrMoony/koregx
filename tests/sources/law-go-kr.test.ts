@@ -237,7 +237,7 @@ describe('LawGoKrSource URL building', () => {
     const spy = vi.spyOn(global, 'fetch').mockResolvedValueOnce(mockRes as unknown as Response)
     await src.fetchLawSearch('약사법', 10)
     expect(spy).toHaveBeenCalledWith(
-      `${BASE}/lawSearch.do?OC=${OC}&target=law&type=JSON&query=%EC%95%BD%EC%82%AC%EB%B2%95&display=10`,
+      `${BASE}/lawSearch.do?OC=${OC}&target=law&type=JSON&query=%EC%95%BD%EC%82%AC%EB%B2%95&display=10&page=1`,
     )
   })
 
@@ -261,7 +261,7 @@ describe('LawGoKrSource URL building', () => {
     const spy = vi.spyOn(global, 'fetch').mockResolvedValueOnce(mockRes as unknown as Response)
     await src.fetchExpcSearch('의약품', 5)
     expect(spy).toHaveBeenCalledWith(
-      `${BASE}/lawSearch.do?OC=${OC}&target=expc&type=JSON&query=%EC%9D%98%EC%95%BD%ED%92%88&display=5`,
+      `${BASE}/lawSearch.do?OC=${OC}&target=expc&type=JSON&query=%EC%9D%98%EC%95%BD%ED%92%88&display=5&page=1`,
     )
   })
 
@@ -273,7 +273,7 @@ describe('LawGoKrSource URL building', () => {
     const spy = vi.spyOn(global, 'fetch').mockResolvedValueOnce(mockRes as unknown as Response)
     await src.fetchAdmrulSearch('임상시험', 20)
     expect(spy).toHaveBeenCalledWith(
-      `${BASE}/lawSearch.do?OC=${OC}&target=admrul&type=JSON&query=%EC%9E%84%EC%83%81%EC%8B%9C%ED%97%98&display=20`,
+      `${BASE}/lawSearch.do?OC=${OC}&target=admrul&type=JSON&query=%EC%9E%84%EC%83%81%EC%8B%9C%ED%97%98&display=20&page=1`,
     )
   })
 
