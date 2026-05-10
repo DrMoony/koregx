@@ -1,19 +1,12 @@
-import { PrismaNeon } from '@prisma/adapter-neon'
-import { neonConfig } from '@neondatabase/serverless'
+import { createPrismaClient } from '@drmoony/koregx-shared/db'
 import { PrismaClient } from '@prisma/client'
-import ws from 'ws'
-
-neonConfig.webSocketConstructor = ws
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
 }
 
-function makeClient() {
-  const adapter = new PrismaNeon({ connectionString: process.env.DATABASE_URL! })
-  return new PrismaClient({ adapter })
-}
-
-export const prisma = globalForPrisma.prisma ?? makeClient()
+export const prisma: PrismaClient =
+  globalForPrisma.prisma ??
+  createPrismaClient({ databaseUrl: process.env.DATABASE_URL!, PrismaClient })
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
