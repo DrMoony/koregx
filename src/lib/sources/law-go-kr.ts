@@ -1,6 +1,6 @@
 import { SourcePlugin } from './base'
 import { prisma } from '@/lib/db'
-import type { Region, IngestResult } from '@/lib/types'
+import type { Region, IngestResult } from '@drmoony/koregx-shared'
 
 const LAW_GO_KR_BASE = 'https://www.law.go.kr/DRF'
 

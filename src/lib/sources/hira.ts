@@ -1,6 +1,6 @@
 import { SourcePlugin } from './base'
 import { prisma } from '@/lib/db'
-import type { Region, IngestResult } from '@/lib/types'
+import type { Region, IngestResult } from '@drmoony/koregx-shared'
 import { createHash } from 'node:crypto'
 
 // ─── Constants ────────────────────────────────────────────────────────────────

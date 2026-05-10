@@ -1,4 +1,4 @@
-import type { Region, IngestResult } from '@/lib/types'
+import type { Region, IngestResult } from '@drmoony/koregx-shared'
 
 export abstract class SourcePlugin {
   abstract name: string

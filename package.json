@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@clerk/nextjs": "^7.3.2",
+    "@drmoony/koregx-shared": "link:../koregx-shared",
     "@google/genai": "^2.0.0",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "@neondatabase/serverless": "^1.1.0",
