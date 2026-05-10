@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { SourcePlugin } from '@/lib/sources/base'
+import { SourcePlugin } from '@drmoony/koregx-shared/sources'
 
 describe('SourcePlugin abstract base', () => {
   it('exposes name + region from subclass', () => {

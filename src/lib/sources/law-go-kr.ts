@@ -1,4 +1,4 @@
-import { SourcePlugin } from './base'
+import { SourcePlugin } from '@drmoony/koregx-shared/sources'
 import { prisma } from '@/lib/db'
 import type { Region, IngestResult } from '@drmoony/koregx-shared'
 
